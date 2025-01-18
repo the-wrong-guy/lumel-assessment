@@ -3,19 +3,23 @@ import TableRow from '../Table/TableRow';
 import TableHeader from '../Table/TableHeader';
 import GrandTotalRow from '../Table/GrandTotalRow';
 import { initialData } from '../../data/initialData';
-import { calculateVariance, getOriginalValues , updateRowValue} from '../../utils/calculations';
+import {
+  calculateVariance,
+  getOriginalValues,
+  updateRowValue,
+} from '../../utils/calculations';
 
 const HierarchicalTable = () => {
   const processedData = {
-    rows: initialData.rows.map(row => {
+    rows: initialData.rows.map((row) => {
       if (row.children) {
         return {
           ...row,
-          value: row.children.reduce((sum, child) => sum + child.value, 0)
+          value: row.children.reduce((sum, child) => sum + child.value, 0),
         };
       }
       return row;
-    })
+    }),
   };
 
   const [data, setData] = useState(processedData);
@@ -23,19 +27,22 @@ const HierarchicalTable = () => {
   const [originalValues] = useState(getOriginalValues(processedData.rows));
 
   function distributeToChildren(rows, rowId, newTotal) {
-    return rows.map(row => {
+    return rows.map((row) => {
       if (row.id === rowId && row.children) {
-        const currentTotal = row.children.reduce((sum, child) => sum + child.value, 0);
-        const children = row.children.map(child => ({
+        const currentTotal = row.children.reduce(
+          (sum, child) => sum + child.value,
+          0
+        );
+        const children = row.children.map((child) => ({
           ...child,
-          value: Number((child.value / currentTotal * newTotal).toFixed(4))
+          value: Number(((child.value / currentTotal) * newTotal).toFixed(4)),
         }));
         return { ...row, value: newTotal, children };
       }
       if (row.children) {
         return {
           ...row,
-          children: distributeToChildren(row.children, rowId, newTotal)
+          children: distributeToChildren(row.children, rowId, newTotal),
         };
       }
       return row;
@@ -43,10 +50,9 @@ const HierarchicalTable = () => {
   }
 
   function handleAllocationPercentage(rowId) {
-
     const percentage = parseFloat(inputValues[rowId]);
-    if (isNaN(percentage)) return;
-    
+    if (percentage < 0 || isNaN(percentage)) return;
+
     const findRow = (rows, id) => {
       for (const row of rows) {
         if (row.id === id) return row;
@@ -66,28 +72,28 @@ const HierarchicalTable = () => {
   }
 
   function handleAllocationValue(rowId) {
-    const newValue = parseFloat(inputValues[rowId]) || 0;
+    const newValue = parseFloat(inputValues[rowId]);
+    if (newValue < 0 || isNaN(newValue)) return;
     let newRows = updateRowValue(data.rows, rowId, newValue);
     newRows = distributeToChildren(newRows, rowId, newValue);
     setData({ ...data, rows: newRows });
   }
 
   function handleInputChange(id, value) {
-    if (typeof value !== 'string' || value.trim() === '') {
-      console.error(`Invalid input for id ${id}: Value cannot be empty or non-string`);
+    if (typeof value !== 'string') {
+      console.error(`Invalid input for id ${id}: Value cannot be non-string`);
       return;
-  }
+    }
 
-  if (value < 0){
-    console.error(`Invalid input for id ${id}: Value cannot be negative`);
-    return;
-  }
-
-  setInputValues({ ...inputValues, [id]: value });
+    if (value < 0) {
+      setInputValues({ ...inputValues, [id]: 0 });
+    } else {
+      setInputValues({ ...inputValues, [id]: value });
+    }
   }
 
   function renderRows(rows, level = 0) {
-    return rows.map(row => (
+    return rows.map((row) => (
       <React.Fragment key={row.id}>
         <TableRow
           row={row}
@@ -119,9 +125,12 @@ const HierarchicalTable = () => {
             <TableHeader />
             <tbody>
               {renderRows(data.rows)}
-              <GrandTotalRow 
+              <GrandTotalRow
                 total={calculateGrandTotal(data.rows)}
-                variance={calculateVariance(calculateGrandTotal(data.rows), originalGrandTotal)}
+                variance={calculateVariance(
+                  calculateGrandTotal(data.rows),
+                  originalGrandTotal
+                )}
               />
             </tbody>
           </table>
