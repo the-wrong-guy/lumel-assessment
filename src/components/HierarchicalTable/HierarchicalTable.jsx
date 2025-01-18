@@ -43,7 +43,10 @@ const HierarchicalTable = () => {
   }
 
   function handleAllocationPercentage(rowId) {
-    const percentage = parseFloat(inputValues[rowId]) || 0;
+
+    const percentage = parseFloat(inputValues[rowId]);
+    if (isNaN(percentage)) return;
+    
     const findRow = (rows, id) => {
       for (const row of rows) {
         if (row.id === id) return row;
@@ -69,6 +72,20 @@ const HierarchicalTable = () => {
     setData({ ...data, rows: newRows });
   }
 
+  function handleInputChange(id, value) {
+    if (typeof value !== 'string' || value.trim() === '') {
+      console.error(`Invalid input for id ${id}: Value cannot be empty or non-string`);
+      return;
+  }
+
+  if (value < 0){
+    console.error(`Invalid input for id ${id}: Value cannot be negative`);
+    return;
+  }
+
+  setInputValues({ ...inputValues, [id]: value });
+  }
+
   function renderRows(rows, level = 0) {
     return rows.map(row => (
       <React.Fragment key={row.id}>
@@ -76,7 +93,7 @@ const HierarchicalTable = () => {
           row={row}
           level={level}
           inputValue={inputValues[row.id]}
-          onInputChange={(id, value) => setInputValues({ ...inputValues, [id]: value })}
+          onInputChange={(id, value) => handleInputChange(id, value)}
           onAllocationPercentage={handleAllocationPercentage}
           onAllocationValue={handleAllocationValue}
           variance={calculateVariance(row.value, originalValues[row.id])}
